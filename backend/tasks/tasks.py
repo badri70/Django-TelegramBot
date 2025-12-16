@@ -9,7 +9,10 @@ def notify_due_tasks():
         due_date__lte=now,
         is_completed=False
     )
+    
 
     for task in tasks:
-        # здесь отправка уведомления
         print(f"Task '{task.title}' is due!")
+
+
+    print(f"Checked for due tasks at {now}. Found {tasks.count()} due tasks.")

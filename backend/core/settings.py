@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from celery.schedules import crontab
+
 
 load_dotenv()
 
@@ -30,7 +32,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -137,6 +139,6 @@ CELERY_TIMEZONE = "America/Adak"
 CELERY_BEAT_SCHEDULE = {
     "check-due-tasks-every-minute": {
         "task": "tasks.tasks.notify_due_tasks",
-        "schedule": 60,
+        "schedule": crontab(minute="*"),
     }
 }
