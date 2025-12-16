@@ -1,5 +1,6 @@
 from django.db import models
 import time
+import datetime
 
 # Create your models here.
 def generate_id():
@@ -32,7 +33,7 @@ class Category(BaseModel):
 class Task(BaseModel):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     due_date = models.DateTimeField()
     is_completed = models.BooleanField(default=False)
 
