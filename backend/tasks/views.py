@@ -1,21 +1,55 @@
-from django.shortcuts import render
+from django.contrib.auth.models import User
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+
 from rest_framework import status
 from .serializers import (
     TaskCreateSerializer,
     TaskListSerializer,
     TaskCompleteSerializer,
     CategoryCreateSerializer,
-    CategoryListSerializer
+    CategoryListSerializer,
+    TelegramAuthSerializer
 )
     
-from .models import Task, Category
+from .models import Task, Category, TelegramUser
 
 
 # Create your views here.
+class TelegramAuthView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        serializer = TelegramAuthSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        telegram_id = serializer.validated_data["telegram_id"]
+        username = serializer.validated_data.get("username", "")
+
+        tg_user, created = TelegramUser.objects.get_or_create(
+            telegram_id=telegram_id,
+            defaults={
+                "user": User.objects.create_user(
+                    username=f"tg_{telegram_id}"
+                ),
+                "username": username,
+            }
+        )
+
+        refresh = RefreshToken.for_user(tg_user.user)
+
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "created": created
+        })
+
+
 class TaskViewSet(ModelViewSet):
     serializer_class = TaskListSerializer
     permission_classes = [IsAuthenticated]

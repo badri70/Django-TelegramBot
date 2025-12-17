@@ -1,6 +1,7 @@
 from django.db import models
 import time
 import datetime
+from django.contrib.auth.models import User
 
 # Create your models here.
 def generate_id():
@@ -16,6 +17,15 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
+    
+
+class TelegramUser(BaseModel):
+    telegram_id = models.BigIntegerField(unique=True)
+    username = models.CharField(max_length=255, blank=True, null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.telegram_id)
 
 
 class Category(BaseModel):

@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from .models import Category, Task
+from .models import Category, Task, TelegramUser
+
+
+class TelegramAuthSerializer(serializers.Serializer):
+    telegram_id = serializers.IntegerField()
+    username = serializers.CharField(required=False, allow_blank=True)
 
 
 class CategoryCreateSerializer(serializers.ModelSerializer):
