@@ -1,11 +1,12 @@
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
-
 from rest_framework import status
 from .serializers import (
     TaskCreateSerializer,
@@ -20,6 +21,7 @@ from .models import Task, Category, TelegramUser
 
 
 # Create your views here.
+@method_decorator(csrf_exempt, name="dispatch")
 class TelegramAuthView(APIView):
     authentication_classes = []
     permission_classes = []
@@ -31,24 +33,25 @@ class TelegramAuthView(APIView):
         telegram_id = serializer.validated_data["telegram_id"]
         username = serializer.validated_data.get("username", "")
 
+        user, _ = User.objects.get_or_create(
+            username=f"tg_{telegram_id}"
+        )
+
         tg_user, created = TelegramUser.objects.get_or_create(
             telegram_id=telegram_id,
             defaults={
-                "user": User.objects.create_user(
-                    username=f"tg_{telegram_id}"
-                ),
+                "user": user,
                 "username": username,
             }
         )
 
-        refresh = RefreshToken.for_user(tg_user.user)
+        refresh = RefreshToken.for_user(user)
 
         return Response({
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "created": created
+            "created": created,
         })
-
 
 class TaskViewSet(ModelViewSet):
     serializer_class = TaskListSerializer
@@ -63,7 +66,7 @@ class TaskViewSet(ModelViewSet):
         return TaskCreateSerializer    
 
     def get_queryset(self):
-        return Task.objects.filter(user=self.request.user)
+        return Task.objects.filter(user=self.request.user, is_completed=False)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

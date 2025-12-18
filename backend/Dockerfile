@@ -1,20 +1,12 @@
 FROM python:3.14-slim
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && apt-get install -y postgresql-client
-
 WORKDIR /app
 
-COPY backend/requirements.txt /app/
+COPY backend/requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/ /app/
+COPY backend/ ./backend/
 
-EXPOSE 8000
-
-# Команда для запуска сервера
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Миграции при запуске
+CMD ["sh", "-c", "python backend/manage.py migrate && python backend/manage.py runserver 0.0.0.0:8000"]

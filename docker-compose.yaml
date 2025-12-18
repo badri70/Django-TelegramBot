@@ -3,24 +3,17 @@ version: "3.9"
 services:
   db:
     image: postgres:15
-    container_name: postgres
-    restart: always
-    env_file:
-      - ./.env
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: authz
+      POSTGRES_USER: authz_user
+      POSTGRES_PASSWORD: authz_pass
     ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7
-    container_name: redis
-    restart: always
     ports:
       - "6379:6379"
 
@@ -28,24 +21,26 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: django-backend
-    command: >
-      sh -c "
-      until pg_isready -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER;
-      do echo 'Waiting for postgres...'; sleep 2; done;
-      python manage.py migrate &&
-      python manage.py runserver 0.0.0.0:8000
-      "
-    volumes:
-      - ./backend:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
     ports:
       - "8000:8000"
-    env_file:
-      - ./.env
-    depends_on:
-      db:
-        condition: service_healthy
 
+  bot:
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - backend
+      - redis
+    ports:
+      - "8001:8001"
+  
   celery:
     build:
       context: .
